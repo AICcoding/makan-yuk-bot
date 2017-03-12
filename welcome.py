@@ -28,6 +28,8 @@ from linebot.models import(
 )
 
 app = Flask(__name__)
+app.config.from_object(os.environ['APP_SETTINGS'])
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', None)
 CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
