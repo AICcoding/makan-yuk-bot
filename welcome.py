@@ -18,13 +18,20 @@ from argparse import ArgumentParser
 from flask import Flask, request, abort, jsonify
 from models import db, Pedagang
 from linebot import (
-    LineBotApi, WebhookParser
+    LineBotApi, WebhookParser, WebhookHandler
 )
 from linebot.exceptions import(
     InvalidSignatureError
 )
 from linebot.models import(
     MessageEvent, TextMessage, TextSendMessage,
+    SourceUser, SourceGroup, SourceRoom,
+    TemplateSendMessage, ConfirmTemplate, MessageTemplateAction,
+    ButtonsTemplate, URITemplateAction, PostbackTemplateAction,
+    CarouselTemplate, CarouselColumn, PostbackEvent,
+    StickerMessage, StickerSendMessage, LocationMessage, LocationSendMessage,
+    ImageMessage, VideoMessage, AudioMessage,
+    UnfollowEvent, FollowEvent, JoinEvent, LeaveEvent, BeaconEvent
 )
 
 app = Flask(__name__)
@@ -41,7 +48,7 @@ if CHANNEL_ACCESS_TOKEN is None:
     sys.exit(1)
 
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
-parser = WebhookParser(CHANNEL_SECRET)
+handler = WebhookHandler(CHANNEL_SECRET)
 
 db.init_app(app)
 
@@ -51,32 +58,31 @@ def Welcome():
 
 @app.route('/callback', methods=['POST'])
 def callback():
+    # get X-Line-Signature header value
     signature = request.headers['X-Line-Signature']
 
+    # get request body as text
     body = request.get_data(as_text=True)
-    app.logger.info("Request Body: " + body)
+    app.logger.info("Request body: " + body)
 
-    #parse webhook body
+    # handle webhook body
     try:
-        events = parser.parse(body, signature)
+        handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
 
-    for event in events:
-        if not isinstance(event, MessageEvent):
-            continue
-        if not isinstance(event.message, TextMessage):
-            continue
-        if event.message.text == 'gus':
-            teks = 'engken gus?'
-        else:
-            teks = event.message.text
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=teks)
-        )
-
     return 'OK'
+
+@handler.add(MessageEvent, message=TextMessage)
+def message_text(event):
+    if event.message.text == 'gus':
+        teks = 'engken gus?'
+    else:
+        teks = event.message.text
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=teks)
+    )
 
 @app.route('/myapp')
 def WelcomeToMyapp():
