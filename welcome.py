@@ -15,8 +15,8 @@
 import os
 import sys
 from argparse import ArgumentParser
-
 from flask import Flask, request, abort, jsonify
+from models import db, Pedagang
 from linebot import (
     LineBotApi, WebhookParser
 )
@@ -29,17 +29,17 @@ from linebot.models import(
 
 app = Flask(__name__)
 
-channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
-channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
-if channel_secret is None:
+CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', None)
+CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
+if CHANNEL_SECRET is None:
     print 'Silahkan set LINE_CHANNEL_SECRET pada environment variable.'
     sys.exit(1)
-if channel_access_token is None:
+if CHANNEL_ACCESS_TOKEN is None:
     print 'Silahkan set LINE_CHANNEL_ACCESS_TOKEN pada environment variable.'
     sys.exit(1)
 
-line_bot_api = LineBotApi(channel_access_token)
-parser = WebhookParser(channel_secret)
+line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
+parser = WebhookParser(CHANNEL_SECRET)
 
 @app.route('/')
 def Welcome():
@@ -92,6 +92,17 @@ def SayHello(name):
         'message': 'Hello ' + name
     }
     return jsonify(results=message)
+
+@app.route('/pedagang', methods=['GET'])
+def getProduct():  
+    data = Pedagang.query.all() #fetch all products on the table
+
+    data_all = []
+
+    for pedagang in data:
+        data_all.append([pedagang.id, pedagang.nama, pedagang.alamat]) #prepare visual data
+
+    return jsonify(products=data_all)
 
 port = os.getenv('PORT', '5000')
 if __name__ == "__main__":
