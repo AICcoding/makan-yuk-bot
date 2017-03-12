@@ -41,6 +41,8 @@ if CHANNEL_ACCESS_TOKEN is None:
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(CHANNEL_SECRET)
 
+db.init_app(app)
+
 @app.route('/')
 def Welcome():
     return app.send_static_file('index.html')
